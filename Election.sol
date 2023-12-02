@@ -8,6 +8,8 @@ import "Candidates.sol";
 
 
 contract Election is Stateful {
+    uint public totalVotes;
+
     Candidates.Map private _candidates;
     mapping(string => uint) private _votes;
     mapping(address => bool) private _voted;
@@ -22,21 +24,25 @@ contract Election is Stateful {
     constructor() Owned(msg.sender) {}
 
 
-    function running(string memory candidate) view public returns(bool) {
+    function registered(string memory candidate) view public returns(bool) {
         return Candidates.contains(_candidates, candidate);
     }
 
-    function run(string calldata name, string calldata proposal, uint age) onlyOwner onPending external {
-        Candidates.add(_candidates, name, Candidates.Information(age, proposal));
+    function register(string calldata candidate, string calldata proposal, uint age) onlyOwner onPending external {
+        Candidates.set(_candidates, candidate, Candidates.Information(age, proposal));
     }
 
-    function information(string memory candidate) view public returns(Candidates.Information memory) {
+    function unregister(string calldata candidate) onlyOwner onPending external {
+        Candidates.remove(_candidates, candidate);
+    }
+
+    function information(string calldata candidate) view external returns(Candidates.Information memory) {
         return Candidates.get(_candidates, candidate);
     }
 
 
     function votes(string memory candidate) view public returns(uint) {
-        if (!running(candidate)) {
+        if (!registered(candidate)) {
             revert Candidates.InvalidKey(candidate);
         }
 
@@ -48,7 +54,7 @@ contract Election is Stateful {
     }
 
     function vote(string calldata candidate) onStarted external {
-        if (!running(candidate)) {
+        if (!registered(candidate)) {
             revert Candidates.InvalidKey(candidate);
         }
 
@@ -56,6 +62,7 @@ contract Election is Stateful {
             revert DuplicateVote(msg.sender);
         }
 
+        totalVotes += 1;
         _votes[candidate] += 1;
         _voted[msg.sender] = true;
 
@@ -63,7 +70,7 @@ contract Election is Stateful {
     }
 
 
-    function winners() onFinished view public returns(string[] memory, uint) {
+    function winners() onFinished view external returns(string[] memory, uint) {
         // Find the maximum of votes and the number of candidates with that many votes
         uint max = 0;
         uint count = 0;
