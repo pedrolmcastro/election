@@ -26,6 +26,10 @@ abstract contract Owned {
 
 
     constructor(address initial) {
+        if (initial == _NULL) {
+            revert InvalidOwner(initial);
+        }
+
         _owner = initial;
     }
 
