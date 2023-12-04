@@ -26,7 +26,7 @@ abstract contract Owned {
 
 
     constructor(address initial) {
-        transferOwnership(initial);
+        _owner = initial;
     }
 
 
@@ -34,7 +34,7 @@ abstract contract Owned {
         return _owner;
     }
 
-    function transferOwnership(address to) public {
+    function transferOwnership(address to) onlyOwner public {
         if (to == _NULL) {
             revert InvalidOwner(to);
         }
